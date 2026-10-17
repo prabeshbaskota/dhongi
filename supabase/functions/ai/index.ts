@@ -41,14 +41,14 @@ async function spend(room: any, n = 1) {
   await db.from('rooms').update({ ai_calls: used + n, ai_day: today }).eq('id', room.id)
 }
 
-async function ask(system: string, user: string, maxTokens = 500): Promise<string> {
+async function ask(system: string, user: string, maxTokens = 500, temperature = 0.9): Promise<string> {
   if (!GROQ_KEY) throw new HttpError(503, 'AI is not set up yet')
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
-      temperature: 0.9,
+      temperature,
       max_completion_tokens: maxTokens,
       reasoning_effort: 'low',
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
@@ -90,8 +90,10 @@ async function words(me: any, room: any, theme: string) {
     'You create word lists for a family-friendly party game where players give one-word clues about a secret word. ' +
       'Reply with ONLY a comma-separated list. No numbering, no explanations.',
     `Theme: ${t}\nGive 20 varied secret words or short phrases (1-3 words each) that fit this theme. ` +
-      'Mix easy and tricky ones. Everyone should recognise them. Nothing offensive.',
+      'Mix easy and tricky ones. Only real, well-known things that most people in a friend group would recognise. ' +
+      'If you are not sure something is real, leave it out. Nothing offensive.',
     700,
+    0.5,
   )
   const list = [...new Set(out.split(/[,\n]/).map(w => w.replace(/^\d+[.)]\s*/, '').trim()).filter(w => w && w.length <= 30))].slice(0, 25)
   if (!list.length) throw new HttpError(502, 'AI came back empty. Try another theme.')
