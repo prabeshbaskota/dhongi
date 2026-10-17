@@ -76,7 +76,7 @@ export default function Clues({ room, byId, me, isHost, session, card, clues }) 
           </form>
         ) : (
           <p className="turn-note" aria-live="polite">
-            {byId[current] ? <>Waiting for <strong>{byId[current].name}</strong>…</> : 'Next player…'}
+            {byId[current] ? <>{byId[current].is_bot ? '🤖 ' : ''}Waiting for <strong>{byId[current].name}</strong>…</> : 'Next player…'}
           </p>
         )}
         {isHost && (

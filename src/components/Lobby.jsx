@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { rpc } from '../lib/supabase.js'
 import PlayerList from './PlayerList.jsx'
+import { ai } from '../lib/ai.js'
 
 const STARTERS = {
   Food: 'Momo, Pizza, Sushi, Chocolate, Mango, Ice cream, Noodles, Popcorn, Burger, Samosa, Pani puri, Watermelon',
@@ -9,8 +10,10 @@ const STARTERS = {
   Things: 'Umbrella, Toothbrush, Phone charger, Mirror, Pillow, Guitar, Ladder, Candle, Wallet, Sunglasses, Remote, Backpack',
 }
 
-export default function Lobby({ room, players, me, isHost, session, online }) {
+export default function Lobby({ room, players, me, isHost, session, online, aiReady }) {
   const [words, setWords] = useState('')
+  const [theme, setTheme] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -40,6 +43,22 @@ export default function Lobby({ room, players, me, isHost, session, online }) {
 
   const start = async () => { setBusy(true); await call('start_game', {}); setBusy(false) }
 
+  const aiWords = async () => {
+    setErr(''); setMsg('')
+    if (!theme.trim()) { setErr('Type a theme first, like “Bollywood” or “Darwin”.'); return }
+    setAiBusy(true)
+    try {
+      const { words: list } = await ai('words', session, { theme })
+      setWords(w => (w.trim() ? w.trim() + ', ' : '') + list.join(', '))
+      setMsg(`AI made ${list.length} words. Check them, then put them in the jar.`)
+    } catch (e) { setErr(e.message) }
+    setAiBusy(false)
+  }
+
+  const humans = playing.filter(p => !p.is_bot).length
+  const bots = playing.filter(p => p.is_bot).length
+  const canAddBot = aiReady && humans < 3 && bots < 2
+
   const notReady = playing.length < 3 ? `Need ${3 - playing.length} more player${playing.length === 2 ? '' : 's'}`
     : room.word_count === 0 ? 'Fill the jar first' : null
 
@@ -59,6 +78,14 @@ export default function Lobby({ room, players, me, isHost, session, online }) {
             <h3 className="sub">Watching <span className="count">{watching.length}</span></h3>
             <PlayerList list={watching} room={room} me={me} isHost={isHost} online={online} session={session} />
           </>
+        )}
+        {isHost && canAddBot && (
+          <button className="btn btn-second small" onClick={() => call('add_bot', {}, (b) => `${b.name} joined. It plays with AI.`)}>
+            🤖 Add an AI player
+          </button>
+        )}
+        {isHost && aiReady && humans < 3 && bots === 0 && (
+          <p className="note">Short on friends? AI players can fill in until 3 people are here.</p>
         )}
         <button className="btn btn-quiet small"
           onClick={() => call('set_spectator', { p_spectator: !me.is_spectator })}>
@@ -109,6 +136,16 @@ export default function Lobby({ room, players, me, isHost, session, online }) {
                 <button key={k} className="chip" onClick={() => setWords(w => (w.trim() ? w.trim() + ', ' : '') + STARTERS[k])}>{k}</button>
               ))}
             </div>
+            {aiReady && (
+              <div className="ai-words">
+                <label htmlFor="theme">Or let AI make words on a theme</label>
+                <div className="clue-row">
+                  <input id="theme" value={theme} maxLength={60} placeholder="e.g. Bollywood, Darwin, Nepali food"
+                    onChange={e => setTheme(e.target.value)} />
+                  <button className="btn btn-second" disabled={aiBusy} onClick={aiWords}>{aiBusy ? 'Thinking…' : '✨ Make'}</button>
+                </div>
+              </div>
+            )}
             <button className="btn btn-second" onClick={fillJar}>Put words in the jar</button>
           </section>
 

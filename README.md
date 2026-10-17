@@ -24,6 +24,14 @@
 - Host controls: skip a slow player, end voting early, remove a player
 - Built-in check that stops innocent players typing the secret word by accident
 
+### AI features (optional, free tier)
+
+- **AI host roast:** after every reveal, an AI host roasts the funniest clue or the worst detective work
+- **AI word packs:** type a theme ("Bollywood", "Darwin", "Nepali food") and get 20 words for the jar
+- **AI players:** for small groups, up to 2 bots fill in until 3 people are in. They give clues, bluff as the Dhongi, and vote
+
+AI runs in a Supabase Edge Function using Groq's free plan, so the API key never reaches the browser. Only player names and clues are sent to the AI, never chat. Each room has a daily cap so nobody can drain the free quota, and if AI is off or unavailable the game still works without it.
+
 ## Fair play by design
 
 Each phone only ever receives its own word. Roles, words and votes live in private database tables that the browser cannot read. Every game action goes through a database function that checks the player's secret token first, so opening browser dev tools won't reveal the Dhongi.
@@ -37,6 +45,7 @@ Each phone only ever receives its own word. Roles, words and votes live in priva
 | Chat, reactions, presence | Supabase Realtime broadcast + presence |
 | Game rules and anti-cheat | Postgres `SECURITY DEFINER` functions with row-level security |
 | Sounds | Synthesised in the browser with the Web Audio API, so there are no audio files |
+| AI | Supabase Edge Function (Deno) calling Groq's OpenAI-compatible API |
 | Hosting | Vercel |
 
 Everything runs on free tiers.
@@ -48,7 +57,9 @@ npm install
 npm run dev
 ```
 
-The app connects to the Dhongi Supabase project by default. To use your own, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (the publishable key) in a `.env` file. The database schema is in [`supabase/schema.sql`](supabase/schema.sql).
+The app connects to the Dhongi Supabase project by default. To use your own, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (the publishable key) in a `.env` file. The database schema is in [`supabase/schema.sql`](supabase/schema.sql), with the AI additions in [`supabase/ai.sql`](supabase/ai.sql).
+
+To turn on AI, deploy [`supabase/functions/ai`](supabase/functions/ai/index.ts) and add a `GROQ_API_KEY` secret to your Supabase project's Edge Function secrets.
 
 ## Roadmap
 

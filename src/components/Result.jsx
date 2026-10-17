@@ -3,7 +3,7 @@ import { rpc } from '../lib/supabase.js'
 import { play } from '../lib/sound.js'
 import { Avatar } from './PlayerList.jsx'
 
-export default function Result({ room, byId, me, isHost, session, card }) {
+export default function Result({ room, byId, me, isHost, session, card, aiReady }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const auth = { p_player: session.player_id, p_token: session.token }
@@ -53,6 +53,13 @@ export default function Result({ room, byId, me, isHost, session, card }) {
         <p className="reveal-word">The word was <span>{room.reveal_word}</span></p>
         {iWasPlayer && <p className={`you-result ${iLost ? 'lost' : 'won'}`}>{iLost ? 'You lost this one.' : 'You won!'}</p>}
       </section>
+
+      {(room.roast || aiReady) && (
+        <section className={`roast ${room.roast ? '' : 'pending'}`} aria-live="polite">
+          <span className="roast-who" aria-hidden="true">🎤</span>
+          <p>{room.roast || 'The AI host is writing a roast…'}</p>
+        </section>
+      )}
 
       <section className="block">
         <h3 className="sub">Votes</h3>

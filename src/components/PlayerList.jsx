@@ -16,7 +16,7 @@ export function hueFor(id) {
 export function Avatar({ p, size = 36, cry }) {
   return (
     <span className="avatar" style={{ '--h': hueFor(p.id), width: size, height: size, fontSize: size * 0.4 }} aria-hidden="true">
-      {cry ? '😭' : initials(p.name)}
+      {cry ? '😭' : p.is_bot ? '🤖' : initials(p.name)}
     </span>
   )
 }
@@ -36,9 +36,10 @@ export default function PlayerList({ list, room, me, isHost, online, session, ex
             {p.name}
             {p.id === me.id && <em> (you)</em>}
             {p.id === room.host_id && <span className="crown" title="Host" aria-label="host"> 👑</span>}
+            {p.is_bot && <span className="bot-tag">AI</span>}
           </span>
           {extra && extra(p)}
-          <span className={`dot ${online[p.id] ? 'on' : ''}`} title={online[p.id] ? 'Online' : 'Away'} />
+          {!p.is_bot && <span className={`dot ${online[p.id] ? 'on' : ''}`} title={online[p.id] ? 'Online' : 'Away'} />}
           {isHost && p.id !== me.id && (
             <button className="kick" onClick={() => kick(p)} aria-label={`Remove ${p.name}`}>✕</button>
           )}

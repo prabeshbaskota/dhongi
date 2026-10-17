@@ -8,6 +8,8 @@ import Vote from './Vote.jsx'
 import Result from './Result.jsx'
 import Chat from './Chat.jsx'
 import Reactions from './Reactions.jsx'
+import { aiAvailable } from '../lib/ai.js'
+import { useBots } from '../lib/useBots.js'
 
 export default function Room({ session, onLeave }) {
   const { room, players, clues, card, error } = useRoom(session)
@@ -19,6 +21,9 @@ export default function Room({ session, onLeave }) {
   const prevStatus = useRef(null)
 
   const byId = useMemo(() => Object.fromEntries(players.map(p => [p.id, p])), [players])
+  const [aiReady, setAiReady] = useState(false)
+  useEffect(() => { aiAvailable().then(setAiReady) }, [])
+  useBots({ room, byId, isHost, session, aiReady })
 
   // little sound cues when the phase changes
   useEffect(() => {
@@ -61,7 +66,7 @@ export default function Room({ session, onLeave }) {
     } catch { /* user cancelled */ }
   }
 
-  const common = { room, players, byId, me, isHost, session, card, clues, online: live.online }
+  const common = { room, players, byId, me, isHost, session, card, clues, online: live.online, aiReady }
 
   return (
     <div className="room">
