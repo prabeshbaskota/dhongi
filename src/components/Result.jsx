@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { rpc } from '../lib/supabase.js'
 import { play } from '../lib/sound.js'
 import { Avatar } from './PlayerList.jsx'
+import Table from './Table.jsx'
+import Audience from './Audience.jsx'
+import { ChatLog } from './Chat.jsx'
 
-export default function Result({ room, byId, me, isHost, session, card, aiReady }) {
+export default function Result({ room, players, byId, me, isHost, session, card, aiReady, bubbles, reacts, gameMessages }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const auth = { p_player: session.player_id, p_token: session.token }
@@ -14,6 +17,19 @@ export default function Result({ room, byId, me, isHost, session, card, aiReady 
   const iLost = iWasPlayer && (dhongiWon ? !iAmDhongi : iAmDhongi)
   const names = impostors.map(id => byId[id]?.name || 'Someone').join(' & ')
   const out = room.voted_out ? byId[room.voted_out] : null
+
+  const seats = room.turn_order.map(id => byId[id]).filter(Boolean)
+  const watching = players.filter(p => !p.kicked && !room.turn_order.includes(p.id))
+  const stamps = useMemo(() => new Set(impostors), [room.game_no, impostors.join()]) // eslint-disable-line
+  const moods = useMemo(() => Object.fromEntries(seats.map(p => {
+    const isD = impostors.includes(p.id)
+    const won = dhongiWon ? isD : !isD
+    return [p.id, won ? (isD ? 'sus' : 'happy') : 'cry']
+  })), [seats, impostors.join(), dhongiWon]) // eslint-disable-line
+  const voteBadges = useMemo(() => {
+    const t = room.vote_tally || {}
+    return Object.fromEntries(seats.map(p => [p.id, t[p.id] ? `${t[p.id]}🗳` : null]))
+  }, [room.vote_tally, seats])
 
   useEffect(() => {
     play('drumroll')
@@ -61,6 +77,10 @@ export default function Result({ room, byId, me, isHost, session, card, aiReady 
         </section>
       )}
 
+      <Table seats={seats} meId={me.id} stamps={stamps} moods={moods} badges={voteBadges} bubbles={bubbles} reacts={reacts}
+        center={<div className="center-note"><span className="small">The word was</span><span className="turn">{room.reveal_word}</span></div>} />
+      <Audience list={watching} bubbles={bubbles} reacts={reacts} />
+
       <section className="block">
         <h3 className="sub">Votes</h3>
         <ul className="tally">
@@ -74,6 +94,8 @@ export default function Result({ room, byId, me, isHost, session, card, aiReady 
           ))}
         </ul>
       </section>
+
+      <ChatLog messages={gameMessages || []} title="What everyone said this game" />
 
       <div className="sticky-cta">
         {isHost ? (

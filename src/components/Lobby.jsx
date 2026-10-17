@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { rpc } from '../lib/supabase.js'
 import PlayerList from './PlayerList.jsx'
 import { ai } from '../lib/ai.js'
+import Table from './Table.jsx'
+import Audience from './Audience.jsx'
 
 const STARTERS = {
   Food: 'Momo, Pizza, Sushi, Chocolate, Mango, Ice cream, Noodles, Popcorn, Burger, Samosa, Pani puri, Watermelon',
@@ -10,7 +12,7 @@ const STARTERS = {
   Things: 'Umbrella, Toothbrush, Phone charger, Mirror, Pillow, Guitar, Ladder, Candle, Wallet, Sunglasses, Remote, Backpack',
 }
 
-export default function Lobby({ room, players, me, isHost, session, online, aiReady }) {
+export default function Lobby({ room, players, me, isHost, session, online, aiReady, bubbles, reacts, onInvite }) {
   const [words, setWords] = useState('')
   const [theme, setTheme] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
@@ -70,15 +72,22 @@ export default function Lobby({ room, players, me, isHost, session, online, aiRe
         <InviteButtons code={room.code} />
       </section>
 
+      <Table seats={playing} meId={me.id} bubbles={bubbles} reacts={reacts}
+        emptyChair={playing.length < 16} onEmptyChair={onInvite}
+        center={<div className="center-note"><span className="big">{playing.length}</span><span>at the table</span></div>} />
+      <Audience list={watching} bubbles={bubbles} reacts={reacts} />
+
       <section className="block">
-        <h2>Players <span className="count">{playing.length}</span></h2>
-        <PlayerList list={playing} room={room} me={me} isHost={isHost} online={online} session={session} />
-        {watching.length > 0 && (
-          <>
-            <h3 className="sub">Watching <span className="count">{watching.length}</span></h3>
-            <PlayerList list={watching} room={room} me={me} isHost={isHost} online={online} session={session} />
-          </>
-        )}
+        <details className="manage">
+          <summary>Players <span className="count">{playing.length}</span>{watching.length > 0 && <> · watching <span className="count">{watching.length}</span></>}</summary>
+          <PlayerList list={playing} room={room} me={me} isHost={isHost} online={online} session={session} />
+          {watching.length > 0 && (
+            <>
+              <h3 className="sub">Watching</h3>
+              <PlayerList list={watching} room={room} me={me} isHost={isHost} online={online} session={session} />
+            </>
+          )}
+        </details>
         {isHost && canAddBot && (
           <button className="btn btn-second small" onClick={() => call('add_bot', {}, (b) => `${b.name} joined. It plays with AI.`)}>
             🤖 Add an AI player

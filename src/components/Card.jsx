@@ -3,7 +3,7 @@ import { play } from '../lib/sound.js'
 
 // Your secret slip from the jar. Tap to peek, tap again to hide,
 // so the person sitting next to you can't read it.
-export default function Card({ card, byId }) {
+export default function Card({ card, byId, compact }) {
   const [open, setOpen] = useState(false)
   useEffect(() => { setOpen(false) }, [card?.game_no])
 
@@ -11,7 +11,7 @@ export default function Card({ card, byId }) {
 
   if (card.state === 'watcher') {
     return (
-      <div className="slip slip-watch">
+      <div className={`slip slip-watch ${compact ? 'compact' : ''}`}>
         <p className="slip-title">You’re watching</p>
         <p className="slip-sub">The word stays secret until the reveal. You’ll be dealt in next game.</p>
       </div>
@@ -21,7 +21,7 @@ export default function Card({ card, byId }) {
   if (card.state === 'director') {
     const names = (card.impostors || []).map(id => byId[id]?.name || 'someone').join(' & ')
     return (
-      <div className="slip slip-director">
+      <div className={`slip slip-director ${compact ? 'compact' : ''}`}>
         <p className="slip-title">Director view</p>
         <p className="slip-word">{card.word}</p>
         <p className="slip-sub">The Dhongi is <strong>{names}</strong>. Keep it quiet. Your chat only goes to other watchers.</p>
@@ -32,7 +32,7 @@ export default function Card({ card, byId }) {
   const toggle = () => { setOpen(o => !o); play('pop') }
 
   return (
-    <button className={`slip ${open ? 'open' : ''} ${open && card.is_impostor ? 'is-dhongi' : ''}`} onClick={toggle}
+    <button className={`slip ${compact ? 'compact' : ''} ${open ? 'open' : ''} ${open && card.is_impostor ? 'is-dhongi' : ''}`} onClick={toggle}
       aria-label={open ? 'Hide your word' : 'Tap to see your word'}>
       {!open ? (
         <>

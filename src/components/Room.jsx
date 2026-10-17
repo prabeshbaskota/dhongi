@@ -25,6 +25,16 @@ export default function Room({ session, onLeave }) {
   useEffect(() => { aiAvailable().then(setAiReady) }, [])
   useBots({ room, byId, isHost, session, aiReady })
 
+  // chat log for the current game, shown on the results screen
+  const gameStart = useRef({ game: null, ts: 0 })
+  if (room && gameStart.current.game !== room.game_no) {
+    gameStart.current = { game: room.game_no, ts: room.status === 'clues' ? Date.now() - 5000 : 0 }
+  }
+  const gameMessages = useMemo(
+    () => live.messages.filter(m => m.ts >= gameStart.current.ts),
+    [live.messages, room?.game_no], // eslint-disable-line
+  )
+
   // little sound cues when the phase changes
   useEffect(() => {
     if (!room) return
@@ -66,7 +76,10 @@ export default function Room({ session, onLeave }) {
     } catch { /* user cancelled */ }
   }
 
-  const common = { room, players, byId, me, isHost, session, card, clues, online: live.online, aiReady }
+  const common = {
+    room, players, byId, me, isHost, session, card, clues, online: live.online, aiReady,
+    bubbles: live.bubbles, reacts: live.reacts, gameMessages, onInvite: share,
+  }
 
   return (
     <div className="room">
@@ -100,7 +113,7 @@ export default function Room({ session, onLeave }) {
 
       <footer className="dock">
         <Reactions onReact={live.sendReaction} />
-        <Chat messages={live.messages} onSend={live.sendChat} me={me} />
+        <Chat onSend={live.sendChat} me={me} />
       </footer>
     </div>
   )
