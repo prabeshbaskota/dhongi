@@ -12,15 +12,28 @@ function writeAll(all) {
 
 const memory = {}
 
+// Per-tab copy first, so two tabs in one browser can hold two different seats
+// (handy for testing), then the browser-wide copy for coming back later.
+function tabGet(c) {
+  try { return JSON.parse(sessionStorage.getItem(`${KEY}:${c}`) || 'null') } catch { return null }
+}
+function tabSet(c, s) {
+  try {
+    if (s) sessionStorage.setItem(`${KEY}:${c}`, JSON.stringify(s))
+    else sessionStorage.removeItem(`${KEY}:${c}`)
+  } catch { /* ignore */ }
+}
+
 export function loadSession(code) {
   if (!code) return null
   const c = code.toUpperCase()
-  return readAll()[c] || memory[c] || null
+  return tabGet(c) || readAll()[c] || memory[c] || null
 }
 
 export function saveSession(s) {
   const c = s.code.toUpperCase()
   memory[c] = s
+  tabSet(c, s)
   const all = readAll()
   all[c] = s
   writeAll(all)
@@ -29,6 +42,7 @@ export function saveSession(s) {
 export function clearSession(code) {
   const c = code.toUpperCase()
   delete memory[c]
+  tabSet(c, null)
   const all = readAll()
   delete all[c]
   writeAll(all)
