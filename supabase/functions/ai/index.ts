@@ -30,6 +30,7 @@ async function caller(playerId: string, token: string) {
   if (!t || t.token !== token) throw new HttpError(401, 'Not in this room')
   const { data: p } = await db.from('players').select('*').eq('id', playerId).single()
   if (!p || p.kicked) throw new HttpError(403, 'Not in this room')
+  if (p.pending) throw new HttpError(403, 'Waiting for the host to let you in')
   const { data: room } = await db.from('rooms').select('*').eq('id', p.room_id).single()
   return { me: p, room }
 }

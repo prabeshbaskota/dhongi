@@ -32,6 +32,12 @@
 
 AI runs in a Supabase Edge Function using Groq's free plan, so the API key never reaches the browser. Only player names and clues are sent to the AI, never chat. Each room has a daily cap so nobody can drain the free quota, and if AI is off or unavailable the game still works without it.
 
+## Who can play
+
+- **Host codes:** only people with a host code can start a room. The owner hands codes out and can switch any code off from the owner page (`?admin`).
+- **Knock to join:** anyone who opens a shared link waits on a "Knock knock…" screen until the host taps *Let in*. A forwarded link is useless without the host's approval.
+- **Room lock:** the host can lock the room so nobody new can even knock.
+
 ## Fair play by design
 
 Each phone only ever receives its own word. Roles, words and votes live in private database tables that the browser cannot read. Every game action goes through a database function that checks the player's secret token first, so opening browser dev tools won't reveal the Dhongi.
@@ -57,7 +63,7 @@ npm install
 npm run dev
 ```
 
-The app connects to the Dhongi Supabase project by default. To use your own, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (the publishable key) in a `.env` file. The database schema is in [`supabase/schema.sql`](supabase/schema.sql), with the AI additions in [`supabase/ai.sql`](supabase/ai.sql).
+The app connects to the Dhongi Supabase project by default. To use your own, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` (the publishable key) in a `.env` file. The database schema is in [`supabase/schema.sql`](supabase/schema.sql), with the AI additions in [`supabase/ai.sql`](supabase/ai.sql) and access control in [`supabase/access.sql`](supabase/access.sql).
 
 To turn on AI, deploy [`supabase/functions/ai`](supabase/functions/ai/index.ts) and add a `GROQ_API_KEY` secret to your Supabase project's Edge Function secrets.
 

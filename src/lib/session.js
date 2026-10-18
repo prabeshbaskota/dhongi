@@ -55,6 +55,14 @@ export function rememberName(n) {
   try { localStorage.setItem(NAME_KEY, n) } catch { /* ignore */ }
 }
 
+const HOST_KEY = 'dhongi:hostcode'
+export function lastHostCode() {
+  try { return localStorage.getItem(HOST_KEY) || '' } catch { return '' }
+}
+export function rememberHostCode(c) {
+  try { localStorage.setItem(HOST_KEY, c) } catch { /* ignore */ }
+}
+
 export function loadMuted() {
   try { return localStorage.getItem(MUTE_KEY) === '1' } catch { return false }
 }

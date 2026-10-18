@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { rpc } from '../lib/supabase.js'
-import { saveSession, lastName, rememberName } from '../lib/session.js'
+import { saveSession, lastName, rememberName, lastHostCode, rememberHostCode } from '../lib/session.js'
 import { play } from '../lib/sound.js'
 import HowTo from './HowTo.jsx'
 
@@ -8,6 +8,8 @@ export default function Home({ initialCode, onEnter }) {
   const [name, setName] = useState(lastName())
   const [code, setCode] = useState(initialCode || '')
   const [watch, setWatch] = useState(false)
+  const [hostCode, setHostCode] = useState(lastHostCode())
+  const [showHost, setShowHost] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const joining = !!initialCode
@@ -17,12 +19,14 @@ export default function Home({ initialCode, onEnter }) {
     const n = name.trim()
     if (!n) { setErr('Type your name first.'); return }
     if (kind === 'join' && code.trim().length < 5) { setErr('Room codes are 5 characters.'); return }
+    if (kind === 'create' && !hostCode.trim()) { setShowHost(true); setErr('Starting a room needs a host code.'); return }
     setBusy(true)
     try {
       const res = kind === 'create'
-        ? await rpc('create_room', { p_name: n })
+        ? await rpc('create_room', { p_name: n, p_code: hostCode.trim() })
         : await rpc('join_room', { p_code: code.trim(), p_name: n, p_spectator: watch })
       rememberName(n)
+      if (kind === 'create') rememberHostCode(hostCode.trim())
       saveSession(res)
       play('ding')
       onEnter(res)
@@ -51,6 +55,7 @@ export default function Home({ initialCode, onEnter }) {
         {joining ? (
           <>
             <p className="join-code">Joining room <strong>{code}</strong></p>
+            <p className="note center">The host will need to let you in.</p>
             <label className="check">
               <input type="checkbox" checked={watch} onChange={e => setWatch(e.target.checked)} />
               <span>Just watch (spectator)</span>
@@ -64,9 +69,19 @@ export default function Home({ initialCode, onEnter }) {
           </>
         ) : (
           <>
+            {(showHost || hostCode) && (
+              <label className="field">
+                <span>Host code</span>
+                <input value={hostCode} maxLength={20} autoComplete="off" autoCapitalize="characters" placeholder="From the game owner"
+                  onChange={e => setHostCode(e.target.value.toUpperCase())} />
+              </label>
+            )}
             <button className="btn btn-main" disabled={busy} onClick={() => go('create')}>
               {busy ? 'Making room…' : 'Start a room'}
             </button>
+            {!showHost && !hostCode && (
+              <p className="note center">You’ll need a host code to start a room. Anyone can join one.</p>
+            )}
             <div className="or"><span>or join a friend</span></div>
             <div className="join-row">
               <input className="code-input" value={code} maxLength={5} placeholder="CODE" autoCapitalize="characters"

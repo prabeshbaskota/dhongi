@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Home from './components/Home.jsx'
 import Room from './components/Room.jsx'
+import Admin from './components/Admin.jsx'
 import { loadSession, clearSession } from './lib/session.js'
 
 function codeFromUrl() {
@@ -28,6 +29,7 @@ export default function App() {
     setCode(''); setSession(null)
   }
 
+  if (new URLSearchParams(location.search).has('admin')) return <Admin />
   if (session) return <Room session={session} onLeave={leave} />
   return <Home initialCode={code} onEnter={enter} />
 }
